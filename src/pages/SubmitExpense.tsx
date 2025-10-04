@@ -46,7 +46,6 @@ const SubmitExpense = () => {
         
         // Use the authenticated user instead of finding a random employee
         const authenticatedUser = authUser || users.find(u => u.role === 'employee') || users[0];
-        console.log('SubmitExpense - Loading data:', { authUser, users, authenticatedUser });
         setCurrentUser(authenticatedUser);
         
         // Extract unique currencies from countries

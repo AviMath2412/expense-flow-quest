@@ -15,16 +15,21 @@ const Dashboard = () => {
   // Load user expenses on component mount
   React.useEffect(() => {
     const loadExpenses = async () => {
+      console.log('Dashboard - Loading expenses for user:', user);
+      
       if (!user?.id) {
+        console.log('Dashboard - No user ID, setting loading to false');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('Dashboard - Fetching expenses for user ID:', user.id);
         const expenses = await getExpensesByUserId(user.id);
+        console.log('Dashboard - Received expenses:', expenses);
         setUserExpenses(expenses);
       } catch (error) {
-        console.error('Error loading expenses:', error);
+        console.error('Dashboard - Error loading expenses:', error);
       } finally {
         setLoading(false);
       }
@@ -36,6 +41,13 @@ const Dashboard = () => {
   const pendingExpenses = userExpenses.filter(e => e.status === 'pending');
   const approvedExpenses = userExpenses.filter(e => e.status === 'approved');
   const totalAmount = userExpenses.reduce((sum, e) => sum + e.totalAmount, 0);
+  
+  console.log('Dashboard - Stats:', {
+    userExpenses: userExpenses.length,
+    pendingExpenses: pendingExpenses.length,
+    approvedExpenses: approvedExpenses.length,
+    totalAmount
+  });
   
   // Get user's currency
   const userCurrency = user?.currency || 'USD';
