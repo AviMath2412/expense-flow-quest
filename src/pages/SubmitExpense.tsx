@@ -34,9 +34,44 @@ const SubmitExpense = () => {
   const [loading, setLoading] = useState(true);
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
   const authUser = getCurrentUser();
+  
+  // Load current user and currencies on component mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [users, countries] = await Promise.all([
+          getAllUsers(),
+          fetchCountries()
+        ]);
+        
+        // Use the authenticated user instead of finding a random employee
+        const authenticatedUser = authUser || users.find(u => u.role === 'employee') || users[0];
+        setCurrentUser(authenticatedUser);
+        
+        // Extract unique currencies from countries
+        const currencies = [...new Set(countries.map(c => c.currency))].sort();
+        setAvailableCurrencies(currencies);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Check permissions
-  if (!hasPermission(authUser, PERMISSIONS.SUBMIT_EXPENSES)) {
+    loadData();
+  }, [authUser]);
+
+  const defaultCurrency = currentUser?.currency || 'USD';
+  
+  const [items, setItems] = useState<ExpenseItem[]>([
+    { amount: '', date: '', description: '', category: '', currency: defaultCurrency },
+  ]);
+  const [overallDescription, setOverallDescription] = useState('');
+  const [receipts, setReceipts] = useState<File[]>([]);
+  const [processingOCR, setProcessingOCR] = useState(false);
+
+  // Check permissions after loading
+  if (!loading && !hasPermission(currentUser, PERMISSIONS.SUBMIT_EXPENSES)) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -52,40 +87,6 @@ const SubmitExpense = () => {
       </DashboardLayout>
     );
   }
-  
-  // Load current user and currencies on component mount
-  React.useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [users, countries] = await Promise.all([
-          getAllUsers(),
-          fetchCountries()
-        ]);
-        
-        const user = users.find(u => u.role === 'employee') || users[2];
-        setCurrentUser(user);
-        
-        // Extract unique currencies from countries
-        const currencies = [...new Set(countries.map(c => c.currency))].sort();
-        setAvailableCurrencies(currencies);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const defaultCurrency = currentUser?.currency || 'USD';
-  
-  const [items, setItems] = useState<ExpenseItem[]>([
-    { amount: '', date: '', description: '', category: '', currency: defaultCurrency },
-  ]);
-  const [overallDescription, setOverallDescription] = useState('');
-  const [receipts, setReceipts] = useState<File[]>([]);
-  const [processingOCR, setProcessingOCR] = useState(false);
 
   const addItem = () => {
     setItems([...items, { amount: '', date: '', description: '', category: '', currency: defaultCurrency }]);
