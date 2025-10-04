@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { getAllUsers, createUser, updateUser } from '@/lib/api-client';
 import { countries, countryCurrencyMap } from '@/lib/mockData';
 import { toast } from '@/hooks/use-toast';
+import { getCurrentUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Plus, Edit, Trash, KeyRound } from 'lucide-react';
 import { UserRole, User } from '@/types';
 
@@ -19,6 +21,7 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUser = getCurrentUser();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -162,6 +165,24 @@ const Users = () => {
     setEditingUser(null);
   };
 
+  // Check permissions
+  if (!hasPermission(currentUser, PERMISSIONS.MANAGE_USERS)) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Access Denied
+            </h2>
+            <p className="text-muted-foreground">
+              You do not have permission to manage users. Only administrators can access this page.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -171,7 +192,7 @@ const Users = () => {
               User Management
             </h2>
             <p className="text-muted-foreground">
-              Manage users, roles, and permissions
+              Manage users, roles, and permissions. Create employees and managers, assign roles and manager relationships.
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

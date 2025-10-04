@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { getCurrentUser, logout } from '@/lib/auth';
 import { cn } from '@/lib/utils';
+import { getAccessibleRoutes, getRoleDisplayName } from '@/lib/permissions';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -28,15 +29,17 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     navigate('/login');
   };
 
+  const accessibleRoutes = getAccessibleRoutes(user);
+  
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] },
-    { path: '/expenses', label: 'My Expenses', icon: FileText, roles: ['employee', 'manager'] },
-    { path: '/submit-expense', label: 'Submit Expense', icon: FileText, roles: ['employee'] },
-    { path: '/approvals', label: 'Approvals', icon: CheckCircle, roles: ['manager', 'admin'] },
-    { path: '/users', label: 'Users', icon: Users, roles: ['admin'] },
-    { path: '/approval-rules', label: 'Approval Rules', icon: GitBranch, roles: ['admin'] },
-    { path: '/settings', label: 'Settings', icon: Settings, roles: ['admin', 'manager', 'employee'] },
-  ].filter(item => user && item.roles.includes(user.role));
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/expenses', label: 'My Expenses', icon: FileText },
+    { path: '/submit-expense', label: 'Submit Expense', icon: FileText },
+    { path: '/approvals', label: 'Approvals', icon: CheckCircle },
+    { path: '/users', label: 'Users', icon: Users },
+    { path: '/approval-rules', label: 'Approval Rules', icon: GitBranch },
+    { path: '/settings', label: 'Settings', icon: Settings },
+  ].filter(item => accessibleRoutes.includes(item.path));
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +58,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{user?.name}</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400 capitalize">{user?.role}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">{getRoleDisplayName(user?.role || 'employee')}</p>
             </div>
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />

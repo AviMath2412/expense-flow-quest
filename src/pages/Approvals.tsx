@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/StatusBadge';
-import { getAllExpenses, updateExpenseStatus, getAllUsers } from '@/lib/api-client';
+import { ConvertedAmount } from '@/components/ConvertedAmount';
+import { getAllExpenses, updateExpenseStatus, getAllUsers, getCompany } from '@/lib/api-client';
 import { ExpenseRequest, User } from '@/types';
 import { getCurrentUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
+import { convertCurrency, formatCurrency } from '@/lib/currency-converter';
 import { toast } from '@/hooks/use-toast';
 import { Check, X } from 'lucide-react';
 import React from 'react';
@@ -17,19 +20,24 @@ const Approvals = () => {
   const [comments, setComments] = useState('');
   const [allExpenses, setAllExpenses] = useState<ExpenseRequest[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [companyCurrency, setCompanyCurrency] = useState<string>('USD');
   const [loading, setLoading] = useState(true);
   const currentUser = getCurrentUser();
 
-  // Load all expenses and users on component mount
+  // Load all expenses, users, and company data on component mount
   React.useEffect(() => {
     const loadData = async () => {
       try {
-        const [expenses, users] = await Promise.all([
+        const [expenses, users, company] = await Promise.all([
           getAllExpenses(),
-          getAllUsers()
+          getAllUsers(),
+          getCompany()
         ]);
         setAllExpenses(expenses);
         setAllUsers(users);
+        if (company) {
+          setCompanyCurrency(company.currency);
+        }
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -62,8 +70,27 @@ const Approvals = () => {
 
   const pendingExpenses = getPendingExpenses();
 
-  // Redirect employees away from approvals page
-  if (currentUser?.role === 'employee') {
+  // Convert expense amount to company currency for display
+  const getDisplayAmount = async (expense: ExpenseRequest): Promise<string> => {
+    if (expense.currency === companyCurrency) {
+      return formatCurrency(expense.totalAmount, companyCurrency);
+    }
+    
+    try {
+      const convertedAmount = await convertCurrency(
+        expense.totalAmount, 
+        expense.currency, 
+        companyCurrency
+      );
+      return formatCurrency(convertedAmount, companyCurrency);
+    } catch (error) {
+      // Fallback to original amount if conversion fails
+      return formatCurrency(expense.totalAmount, expense.currency);
+    }
+  };
+
+  // Check permissions
+  if (!hasPermission(currentUser, PERMISSIONS.APPROVE_EXPENSES)) {
     return (
       <DashboardLayout>
         <div className="space-y-6">
@@ -180,9 +207,9 @@ const Approvals = () => {
           </h2>
           <p className="text-muted-foreground">
             {currentUser?.role === 'admin' 
-              ? 'Review and approve all expense submissions in the system'
+              ? 'Review and approve all expense submissions in the system. Amounts shown in company default currency.'
               : currentUser?.role === 'manager'
-              ? 'Review and approve expense submissions from your direct reports'
+              ? 'Review and approve expense submissions from your direct reports. Amounts shown in company default currency.'
               : 'You do not have permission to view approvals'
             }
           </p>
@@ -222,7 +249,11 @@ const Approvals = () => {
                         <StatusBadge status={expense.status} />
                       </div>
                       <p className="text-sm text-muted-foreground mb-1">
-                        Amount: {expense.currency === 'INR' ? '₹' : expense.currency === 'USD' ? '$' : expense.currency}{expense.totalAmount.toFixed(2)}
+                        Amount: <ConvertedAmount 
+                          amount={expense.totalAmount} 
+                          fromCurrency={expense.currency} 
+                          toCurrency={companyCurrency}
+                        />
                       </p>
                       <p className="text-sm text-muted-foreground">
                         Submitted: {new Date(expense.submitDate).toLocaleDateString()}
@@ -264,7 +295,13 @@ const Approvals = () => {
                               >
                                 <div className="flex justify-between">
                                   <p className="font-medium">{item.description}</p>
-                                  <p className="font-semibold">{item.currency === 'INR' ? '₹' : item.currency === 'USD' ? '$' : item.currency}{item.amount.toFixed(2)}</p>
+                                  <p className="font-semibold">
+                                    <ConvertedAmount 
+                                      amount={item.amount} 
+                                      fromCurrency={item.currency} 
+                                      toCurrency={companyCurrency}
+                                    />
+                                  </p>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                   {item.category} • {new Date(item.date).toLocaleDateString()}

@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { getAllUsers } from '@/lib/api-client';
 import { toast } from '@/hooks/use-toast';
+import { getCurrentUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Plus, Edit, Trash, Users, ArrowRight } from 'lucide-react';
 import { User } from '@/types';
 
@@ -38,6 +40,25 @@ const ApprovalRules = () => {
   const [editingRule, setEditingRule] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUser = getCurrentUser();
+
+  // Check permissions
+  if (!hasPermission(currentUser, PERMISSIONS.CONFIGURE_APPROVAL_RULES)) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Access Denied
+            </h2>
+            <p className="text-muted-foreground">
+              You do not have permission to configure approval rules. Only administrators can access this page.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
   const [formData, setFormData] = useState({
     employeeId: '',
     managerId: '',

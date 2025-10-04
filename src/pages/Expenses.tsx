@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { getCurrentUser } from '@/lib/auth';
 import { getExpensesByUserId } from '@/lib/api-client';
 import { ExpenseRequest } from '@/types';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Eye } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
@@ -13,6 +14,24 @@ const Expenses = () => {
   const user = getCurrentUser();
   const [userExpenses, setUserExpenses] = useState<ExpenseRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Check permissions
+  if (!hasPermission(user, PERMISSIONS.VIEW_OWN_EXPENSES)) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Access Denied
+            </h2>
+            <p className="text-muted-foreground">
+              You do not have permission to view expenses.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Load user expenses on component mount
   React.useEffect(() => {

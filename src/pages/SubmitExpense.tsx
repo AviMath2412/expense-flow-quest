@@ -13,6 +13,8 @@ import { getAllUsers, createExpense } from '@/lib/api-client';
 import { simulateOCR, performOCR } from '@/lib/api';
 import { fetchCountries, getCurrencySymbol } from '@/lib/country-api';
 import { convertCurrency, formatCurrency } from '@/lib/currency-converter';
+import { getCurrentUser } from '@/lib/auth';
+import { hasPermission, PERMISSIONS } from '@/lib/permissions';
 import { Plus, Upload, X, Sparkles, Loader2 } from 'lucide-react';
 import { User } from '@/types';
 
@@ -31,6 +33,25 @@ const SubmitExpense = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
+  const authUser = getCurrentUser();
+
+  // Check permissions
+  if (!hasPermission(authUser, PERMISSIONS.SUBMIT_EXPENSES)) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Access Denied
+            </h2>
+            <p className="text-muted-foreground">
+              You do not have permission to submit expenses. Only employees and managers can submit expenses.
+            </p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
   
   // Load current user and currencies on component mount
   React.useEffect(() => {
