@@ -159,27 +159,28 @@ const SubmitExpense = () => {
       const ocrCurrency = ocrResult.currency || defaultCurrency;
       const ocrAmount = ocrResult.amount || 0;
       
-      // Convert currency if different from user's default
-      let convertedAmount = ocrAmount;
+      // Store the original currency and amount from OCR
       const originalAmount = ocrAmount;
       const originalCurrency = ocrCurrency;
       
-      if (ocrCurrency !== defaultCurrency) {
+      // Convert to USD for company reporting
+      let usdAmount = ocrAmount;
+      if (ocrCurrency !== 'USD') {
         try {
-          convertedAmount = await convertCurrency(ocrAmount, ocrCurrency, defaultCurrency);
+          usdAmount = await convertCurrency(ocrAmount, ocrCurrency, 'USD');
         } catch (error) {
-          console.error('Currency conversion failed:', error);
+          console.error('Currency conversion to USD failed:', error);
           // Keep original amount if conversion fails
         }
       }
       
       newItems[targetIndex] = {
-        amount: convertedAmount.toString(),
+        amount: originalAmount.toString(), // Store original amount
         date: ocrResult.date || '',
         description: ocrResult.description || '',
         category: ocrResult.category || '',
-        currency: defaultCurrency,
-        convertedAmount,
+        currency: originalCurrency, // Store original currency
+        convertedAmount: usdAmount, // USD amount for company
         originalAmount,
         originalCurrency,
       };
@@ -187,8 +188,8 @@ const SubmitExpense = () => {
       setItems(newItems);
       setReceipts([...receipts, file]);
       
-      const conversionMessage = ocrCurrency !== defaultCurrency 
-        ? ` (converted from ${formatCurrency(originalAmount, originalCurrency)})`
+      const conversionMessage = ocrCurrency !== 'USD' 
+        ? ` (USD: ${formatCurrency(usdAmount, 'USD')})`
         : '';
       
       // Show success with extracted data
@@ -199,7 +200,7 @@ const SubmitExpense = () => {
       
       toast({
         title: 'Receipt processed successfully!',
-        description: `Amount: ${formatCurrency(convertedAmount, defaultCurrency)}${conversionMessage}${extractedInfo.length > 0 ? ` | ${extractedInfo.join(', ')}` : ''}`,
+        description: `Amount: ${formatCurrency(originalAmount, originalCurrency)}${conversionMessage}${extractedInfo.length > 0 ? ` | ${extractedInfo.join(', ')}` : ''}`,
       });
     } catch (error) {
       console.error('OCR processing failed:', error);
@@ -228,16 +229,37 @@ const SubmitExpense = () => {
     }
 
     try {
-      const expenseData = {
-        userId: currentUser.id,
-        description: overallDescription,
-        items: items.map(item => ({
-          amount: parseFloat(item.amount) || 0,
+      // Calculate total in USD for company reporting
+      let totalUSD = 0;
+      const processedItems = await Promise.all(items.map(async (item) => {
+        const amount = parseFloat(item.amount) || 0;
+        let usdAmount = amount;
+        
+        // Convert to USD if not already USD
+        if (item.currency !== 'USD') {
+          try {
+            usdAmount = await convertCurrency(amount, item.currency, 'USD');
+          } catch (error) {
+            console.error('Currency conversion failed for item:', error);
+            usdAmount = amount; // Fallback to original amount
+          }
+        }
+        
+        totalUSD += usdAmount;
+        
+        return {
+          amount: amount, // Store original amount
           date: item.date,
           description: item.description,
           category: item.category,
-          currency: item.currency,
-        })),
+          currency: item.currency, // Store original currency
+        };
+      }));
+
+      const expenseData = {
+        userId: currentUser.id,
+        description: overallDescription,
+        items: processedItems,
         receipts: receipts.map(file => ({
           filePath: `/uploads/${file.name}`,
         })),
@@ -246,12 +268,17 @@ const SubmitExpense = () => {
       const newExpense = await createExpense(expenseData);
       
       if (newExpense) {
-        const totalAmount = newExpense.totalAmount;
-        const currencySymbol = defaultCurrency === 'INR' ? '₹' : defaultCurrency === 'USD' ? '$' : defaultCurrency;
+        // Show submission success with both original and USD amounts
+        const originalTotal = items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+        const originalCurrency = items[0]?.currency || defaultCurrency;
+        
+        const usdMessage = originalCurrency !== 'USD' 
+          ? ` (USD: ${formatCurrency(totalUSD, 'USD')})`
+          : '';
         
         toast({
           title: 'Expense submitted!',
-          description: `Total amount: ${currencySymbol}${totalAmount.toFixed(2)} - Awaiting approval`,
+          description: `Total: ${formatCurrency(originalTotal, originalCurrency)}${usdMessage} - Awaiting approval`,
         });
 
         // Reset form
@@ -363,7 +390,7 @@ const SubmitExpense = () => {
                                 required
                                 className="flex-1"
                               />
-                              {item.currency !== defaultCurrency && item.amount && (
+                              {item.currency !== 'USD' && item.amount && (
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -372,12 +399,12 @@ const SubmitExpense = () => {
                                     try {
                                       const amount = parseFloat(item.amount);
                                       if (amount && item.currency) {
-                                        const converted = await convertCurrency(amount, item.currency, defaultCurrency);
+                                        const converted = await convertCurrency(amount, item.currency, 'USD');
                                         updateItem(index, 'amount', converted.toString());
-                                        updateItem(index, 'currency', defaultCurrency);
+                                        updateItem(index, 'currency', 'USD');
                                         toast({
                                           title: 'Currency converted',
-                                          description: `${formatCurrency(amount, item.currency)} converted to ${formatCurrency(converted, defaultCurrency)}`,
+                                          description: `${formatCurrency(amount, item.currency)} converted to ${formatCurrency(converted, 'USD')}`,
                                         });
                                       }
                                     } catch (error) {
@@ -389,7 +416,7 @@ const SubmitExpense = () => {
                                     }
                                   }}
                                 >
-                                  Convert to {defaultCurrency}
+                                  Convert to USD
                                 </Button>
                               )}
                             </div>

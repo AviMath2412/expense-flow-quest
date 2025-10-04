@@ -16,7 +16,10 @@ const Dashboard = () => {
   // Load expenses based on user role
   React.useEffect(() => {
     const loadExpenses = async () => {
+      console.log('Dashboard - Loading expenses for user:', user);
+      
       if (!user?.id) {
+        console.log('Dashboard - No user ID, setting loading to false');
         setLoading(false);
         return;
       }
@@ -24,17 +27,23 @@ const Dashboard = () => {
       try {
         if (user.role === 'admin') {
           // Admin sees all expenses
+          console.log('Dashboard - Admin: Fetching all expenses');
           const allExpensesData = await getAllExpenses();
+          console.log('Dashboard - Admin: Received all expenses:', allExpensesData);
           setAllExpenses(allExpensesData);
           setUserExpenses(allExpensesData);
         } else if (user.role === 'manager') {
           // Manager sees all expenses (can approve any)
+          console.log('Dashboard - Manager: Fetching all expenses');
           const allExpensesData = await getAllExpenses();
+          console.log('Dashboard - Manager: Received all expenses:', allExpensesData);
           setAllExpenses(allExpensesData);
           setUserExpenses(allExpensesData);
         } else {
           // Employee sees only their own expenses
+          console.log('Dashboard - Employee: Fetching user expenses for ID:', user.id);
           const userExpensesData = await getExpensesByUserId(user.id);
+          console.log('Dashboard - Employee: Received user expenses:', userExpensesData);
           setUserExpenses(userExpensesData);
         }
       } catch (error) {
@@ -92,6 +101,13 @@ const Dashboard = () => {
   };
 
   const stats = getDashboardStats();
+  
+  console.log('Dashboard - Stats:', {
+    userRole: user?.role,
+    userExpenses: userExpenses.length,
+    allExpenses: allExpenses.length,
+    stats
+  });
   
   // Get user's currency
   const userCurrency = user?.currency || 'USD';
