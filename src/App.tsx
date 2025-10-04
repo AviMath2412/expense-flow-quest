@@ -59,7 +59,7 @@ const App = () => (
           <Route
             path="/submit-expense"
             element={
-              <ProtectedRoute allowedRoles={['employee']}>
+              <ProtectedRoute allowedRoles={['employee', 'manager', 'admin']}>
                 <SubmitExpense />
               </ProtectedRoute>
             }
