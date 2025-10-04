@@ -33,11 +33,16 @@ export const logout = (): void => {
 
 export const getCurrentUser = (): User | null => {
   const userStr = localStorage.getItem(USER_KEY);
+  console.log('Auth - getCurrentUser - userStr from localStorage:', userStr);
+  
   if (!userStr) return null;
   
   try {
-    return JSON.parse(userStr);
-  } catch {
+    const user = JSON.parse(userStr);
+    console.log('Auth - getCurrentUser - parsed user:', user);
+    return user;
+  } catch (error) {
+    console.error('Auth - getCurrentUser - error parsing user:', error);
     return null;
   }
 };
