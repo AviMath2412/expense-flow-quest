@@ -1,100 +1,121 @@
-export interface Country {
-  code: string;
-  name: string;
-  currency: string;
-}
+// Re-export from the new modules
+export { fetchCountries, type CountryCurrency as Country } from './country-api';
+export { 
+  fetchExchangeRates, 
+  convertCurrency, 
+  getExchangeRate, 
+  formatCurrency,
+  type ExchangeRate 
+} from './currency-converter';
 
-export interface ExchangeRates {
-  [currency: string]: number;
-}
-
-// Fetch countries from REST Countries API
-export const fetchCountries = async (): Promise<Country[]> => {
-  try {
-    const response = await fetch('https://restcountries.com/v3.1/all?fields=name,currencies,cca2');
-    const data = await response.json();
-    
-    return data.map((country: any) => {
-      const currencyCode = Object.keys(country.currencies || {})[0] || 'USD';
-      return {
-        code: country.cca2,
-        name: country.name.common,
-        currency: currencyCode,
-      };
-    }).sort((a: Country, b: Country) => a.name.localeCompare(b.name));
-  } catch (error) {
-    console.error('Error fetching countries:', error);
-    return [];
-  }
-};
-
-// Fetch exchange rates
-export const fetchExchangeRates = async (baseCurrency: string): Promise<ExchangeRates> => {
-  try {
-    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
-    const data = await response.json();
-    return data.rates;
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-    return {};
-  }
-};
-
-// Convert amount to USD
-export const convertToUSD = async (amount: number, fromCurrency: string): Promise<number> => {
-  if (fromCurrency === 'USD') return amount;
-  
-  try {
-    const rates = await fetchExchangeRates(fromCurrency);
-    const usdRate = rates['USD'];
-    if (usdRate) {
-      return amount * usdRate;
-    }
-    return amount;
-  } catch (error) {
-    console.error('Error converting currency:', error);
-    return amount;
-  }
-};
-
-// Simulate OCR extraction from receipt image
+// OCR extraction from receipt image
 export interface OCRResult {
   amount?: number;
   date?: string;
   description?: string;
   vendor?: string;
   category?: string;
+  currency?: string;
+  items?: Array<{
+    description: string;
+    amount: number;
+  }>;
 }
 
 export const simulateOCR = async (file: File): Promise<OCRResult> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  // Simulate API delay for processing
+  await new Promise(resolve => setTimeout(resolve, 2000));
   
-  // Mock OCR results
+  // Enhanced mock OCR results with more realistic data
   const mockResults: OCRResult[] = [
     {
       amount: 45.99,
       date: new Date().toISOString().split('T')[0],
-      description: 'Business lunch at Restaurant',
-      vendor: 'The Bistro',
+      description: 'Business lunch with client',
+      vendor: 'The Bistro Restaurant',
       category: 'Meals',
+      currency: 'USD',
+      items: [
+        { description: 'Grilled Salmon', amount: 28.99 },
+        { description: 'Caesar Salad', amount: 12.50 },
+        { description: 'Coffee', amount: 4.50 }
+      ]
     },
     {
       amount: 120.50,
       date: new Date().toISOString().split('T')[0],
       description: 'Taxi to client meeting',
-      vendor: 'Uber',
+      vendor: 'Uber Technologies',
       category: 'Transportation',
+      currency: 'USD',
+      items: [
+        { description: 'Ride to downtown office', amount: 120.50 }
+      ]
     },
     {
       amount: 89.99,
       date: new Date().toISOString().split('T')[0],
       description: 'Office supplies purchase',
-      vendor: 'Staples',
+      vendor: 'Staples Office Center',
       category: 'Office Supplies',
+      currency: 'USD',
+      items: [
+        { description: 'Printer Paper (500 sheets)', amount: 24.99 },
+        { description: 'Blue Ink Cartridge', amount: 35.00 },
+        { description: 'Stapler', amount: 30.00 }
+      ]
     },
+    {
+      amount: 156.75,
+      date: new Date().toISOString().split('T')[0],
+      description: 'Hotel accommodation for business trip',
+      vendor: 'Marriott Hotel',
+      category: 'Accommodation',
+      currency: 'USD',
+      items: [
+        { description: 'One night stay', amount: 140.00 },
+        { description: 'Room service', amount: 16.75 }
+      ]
+    },
+    {
+      amount: 67.20,
+      date: new Date().toISOString().split('T')[0],
+      description: 'Flight booking for conference',
+      vendor: 'Delta Airlines',
+      category: 'Travel',
+      currency: 'USD',
+      items: [
+        { description: 'Economy class ticket', amount: 67.20 }
+      ]
+    },
+    {
+      amount: 234.50,
+      date: new Date().toISOString().split('T')[0],
+      description: 'Client entertainment dinner',
+      vendor: 'Fine Dining Restaurant',
+      category: 'Entertainment',
+      currency: 'USD',
+      items: [
+        { description: 'Wine selection', amount: 85.00 },
+        { description: 'Main course (2)', amount: 98.00 },
+        { description: 'Dessert', amount: 28.50 },
+        { description: 'Service charge', amount: 23.00 }
+      ]
+    }
   ];
   
   // Return random mock result
   return mockResults[Math.floor(Math.random() * mockResults.length)];
+};
+
+// Real OCR implementation using a service like Google Vision API or Tesseract.js
+export const performOCR = async (file: File): Promise<OCRResult> => {
+  // For now, we'll use the simulated OCR
+  // In a real implementation, you would:
+  // 1. Upload the image to an OCR service
+  // 2. Process the text extraction
+  // 3. Parse the receipt data
+  // 4. Return structured data
+  
+  return simulateOCR(file);
 };

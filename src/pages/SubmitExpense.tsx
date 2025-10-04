@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { expenseCategories, currencies } from '@/lib/mockData';import { getAllUsers, createExpense } from '@/lib/api-client';
-
-import { simulateOCR } from '@/lib/api';
+import { expenseCategories } from '@/lib/mockData';
+import { getAllUsers, createExpense } from '@/lib/api-client';
+import { simulateOCR, performOCR } from '@/lib/api';
+import { fetchCountries, getCurrencySymbol } from '@/lib/country-api';
+import { convertCurrency, formatCurrency } from '@/lib/currency-converter';
 import { Plus, Upload, X, Sparkles, Loader2 } from 'lucide-react';
 import { User } from '@/types';
 
@@ -20,27 +22,39 @@ interface ExpenseItem {
   description: string;
   category: string;
   currency: string;
+  convertedAmount?: number;
+  originalAmount?: number;
+  originalCurrency?: string;
 }
 
 const SubmitExpense = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [availableCurrencies, setAvailableCurrencies] = useState<string[]>([]);
   
-  // Load current user on component mount
+  // Load current user and currencies on component mount
   React.useEffect(() => {
-    const loadCurrentUser = async () => {
+    const loadData = async () => {
       try {
-        const users = await getAllUsers();
+        const [users, countries] = await Promise.all([
+          getAllUsers(),
+          fetchCountries()
+        ]);
+        
         const user = users.find(u => u.role === 'employee') || users[2];
         setCurrentUser(user);
+        
+        // Extract unique currencies from countries
+        const currencies = [...new Set(countries.map(c => c.currency))].sort();
+        setAvailableCurrencies(currencies);
       } catch (error) {
-        console.error('Error loading current user:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadCurrentUser();
+    loadData();
   }, []);
 
   const defaultCurrency = currentUser?.currency || 'USD';
@@ -60,9 +74,9 @@ const SubmitExpense = () => {
     setItems(items.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof ExpenseItem, value: string) => {
+  const updateItem = (index: number, field: keyof ExpenseItem, value: string | number) => {
     const newItems = [...items];
-    newItems[index][field] = value;
+    (newItems[index] as any)[field] = value;
     setItems(newItems);
   };
 
@@ -82,7 +96,7 @@ const SubmitExpense = () => {
 
     setProcessingOCR(true);
     try {
-      const ocrResult = await simulateOCR(file);
+      const ocrResult = await performOCR(file);
       
       // Auto-fill the first empty item or add new item
       const emptyIndex = items.findIndex(item => !item.amount);
@@ -93,20 +107,44 @@ const SubmitExpense = () => {
         newItems.push({ amount: '', date: '', description: '', category: '', currency: defaultCurrency });
       }
       
+      const ocrCurrency = ocrResult.currency || defaultCurrency;
+      const ocrAmount = ocrResult.amount || 0;
+      
+      // Convert currency if different from user's default
+      let convertedAmount = ocrAmount;
+      const originalAmount = ocrAmount;
+      const originalCurrency = ocrCurrency;
+      
+      if (ocrCurrency !== defaultCurrency) {
+        try {
+          convertedAmount = await convertCurrency(ocrAmount, ocrCurrency, defaultCurrency);
+        } catch (error) {
+          console.error('Currency conversion failed:', error);
+          // Keep original amount if conversion fails
+        }
+      }
+      
       newItems[targetIndex] = {
-        amount: ocrResult.amount?.toString() || '',
+        amount: convertedAmount.toString(),
         date: ocrResult.date || '',
         description: ocrResult.description || '',
         category: ocrResult.category || '',
         currency: defaultCurrency,
+        convertedAmount,
+        originalAmount,
+        originalCurrency,
       };
       
       setItems(newItems);
       setReceipts([...receipts, file]);
       
+      const conversionMessage = ocrCurrency !== defaultCurrency 
+        ? ` (converted from ${formatCurrency(originalAmount, originalCurrency)})`
+        : '';
+      
       toast({
         title: 'Receipt processed!',
-        description: 'Expense details extracted and filled automatically',
+        description: `Expense details extracted and filled automatically${conversionMessage}`,
       });
     } catch (error) {
       toast({
@@ -257,14 +295,51 @@ const SubmitExpense = () => {
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <Label>Amount</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="0.00"
-                              value={item.amount}
-                              onChange={(e) => updateItem(index, 'amount', e.target.value)}
-                              required
-                            />
+                            <div className="flex gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={item.amount}
+                                onChange={(e) => updateItem(index, 'amount', e.target.value)}
+                                required
+                                className="flex-1"
+                              />
+                              {item.currency !== defaultCurrency && item.amount && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      const amount = parseFloat(item.amount);
+                                      if (amount && item.currency) {
+                                        const converted = await convertCurrency(amount, item.currency, defaultCurrency);
+                                        updateItem(index, 'amount', converted.toString());
+                                        updateItem(index, 'currency', defaultCurrency);
+                                        toast({
+                                          title: 'Currency converted',
+                                          description: `${formatCurrency(amount, item.currency)} converted to ${formatCurrency(converted, defaultCurrency)}`,
+                                        });
+                                      }
+                                    } catch (error) {
+                                      toast({
+                                        title: 'Conversion failed',
+                                        description: 'Could not convert currency',
+                                        variant: 'destructive',
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Convert to {defaultCurrency}
+                                </Button>
+                              )}
+                            </div>
+                            {item.originalAmount && item.originalCurrency && (
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Original: {formatCurrency(item.originalAmount, item.originalCurrency)}
+                              </p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -277,9 +352,9 @@ const SubmitExpense = () => {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {currencies.map((curr) => (
+                                {availableCurrencies.map((curr) => (
                                   <SelectItem key={curr} value={curr}>
-                                    {curr}
+                                    {getCurrencySymbol(curr)} {curr}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

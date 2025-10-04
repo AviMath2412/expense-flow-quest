@@ -1,5 +1,6 @@
 import { User, Company } from '@/types';
 import { getUserById, createUser, getCompany, createCompany, getAllUsers } from './api-client';
+import { getCurrencySymbol } from './country-api';
 
 const AUTH_KEY = 'expense_auth_token';
 const USER_KEY = 'expense_current_user';
@@ -49,7 +50,7 @@ export const updateCurrentUser = (user: User): void => {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
-export const signup = async (email: string, password: string, name: string, country: { code: string; name: string; currency: string }): Promise<User | null> => {
+export const signup = async (email: string, password: string, name: string, country: { code: string; name: string; currency: string; currencySymbol: string }): Promise<User | null> => {
   try {
     // Check if user already exists
     const users = await getAllUsers();
@@ -58,13 +59,14 @@ export const signup = async (email: string, password: string, name: string, coun
       return null;
     }
 
-    // Create new admin user
+    // Create new admin user with country currency
     const newUser = await createUser({
       name,
       email,
       role: 'admin',
       department: 'Administration',
       country: country.name,
+      currency: country.currency,
       hireDate: new Date().toISOString().split('T')[0],
     });
 
@@ -73,8 +75,9 @@ export const signup = async (email: string, password: string, name: string, coun
     }
 
     // Create company with selected country and currency
+    const companyName = `${name}'s Company`;
     await createCompany({
-      name: `${name}'s Company`,
+      name: companyName,
       country: country.name,
       currency: country.currency,
     });
