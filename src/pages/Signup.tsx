@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { signup } from '@/lib/auth';
 import { fetchCountries, Country } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
-import { DollarSign, Loader2 } from 'lucide-react';
+import { Building2, Loader2 } from 'lucide-react';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -92,14 +92,14 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <DollarSign className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg">
+            <Building2 className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Create Admin Account</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">Create Admin Account</CardTitle>
+          <CardDescription className="text-slate-600 dark:text-slate-400">
             Set up your company account to get started
           </CardDescription>
         </CardHeader>

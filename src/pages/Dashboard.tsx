@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getCurrentUser } from '@/lib/auth';
 import { getExpensesByUserId, getAllUsers } from '@/lib/api-client';
 import { ExpenseRequest } from '@/types';
-import { DollarSign, FileText, Clock, CheckCircle } from 'lucide-react';
+import { CreditCard, FileText, Clock, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 
@@ -63,7 +63,7 @@ const Dashboard = () => {
     {
       title: 'Total Amount',
       value: `${currencySymbol}${totalAmount.toFixed(2)}`,
-      icon: DollarSign,
+      icon: CreditCard,
       description: userCurrency,
     },
   ];
@@ -72,11 +72,11 @@ const Dashboard = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Welcome back, {user?.name}
           </h2>
-          <p className="text-muted-foreground">
-            Here's an overview of your expense activity
+          <p className="text-slate-600 dark:text-slate-400">
+            Here's an overview of your expense activity and financial summary
           </p>
         </div>
 

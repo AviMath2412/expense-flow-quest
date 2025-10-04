@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { login } from '@/lib/auth';
 import { toast } from '@/hooks/use-toast';
-import { DollarSign } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -53,15 +53,15 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <DollarSign className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg">
+            <Building2 className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome to ExpenseHub</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
+          <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">ExpenseHub</CardTitle>
+          <CardDescription className="text-slate-600 dark:text-slate-400">
+            Professional Expense Management System
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -94,13 +94,13 @@ const Login = () => {
           </form>
 
           <div className="mt-6 space-y-3">
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
-              <p className="text-sm font-medium">Demo Accounts:</p>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>Admin: admin@techcorp.com</p>
-                <p>Manager: manager@techcorp.com</p>
-                <p>Employee: employee@techcorp.com</p>
-                <p className="mt-2 italic">Password: any value</p>
+            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Demo Accounts:</p>
+              <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
+                <p><span className="font-medium">Admin:</span> admin@techcorp.com</p>
+                <p><span className="font-medium">Manager:</span> manager@techcorp.com</p>
+                <p><span className="font-medium">Employee:</span> employee@techcorp.com</p>
+                <p className="mt-2 italic text-slate-500 dark:text-slate-500">Password: any value</p>
               </div>
             </div>
 
