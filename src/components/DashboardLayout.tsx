@@ -38,6 +38,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { path: '/approvals', label: 'Approvals', icon: CheckCircle },
     { path: '/users', label: 'Users', icon: Users },
     { path: '/approval-rules', label: 'Approval Rules', icon: GitBranch },
+    { path: '/ocr-test', label: 'OCR Test', icon: FileText },
     { path: '/settings', label: 'Settings', icon: Settings },
   ].filter(item => accessibleRoutes.includes(item.path));
 

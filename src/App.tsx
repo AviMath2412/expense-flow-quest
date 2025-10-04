@@ -13,6 +13,7 @@ import SubmitExpense from "./pages/SubmitExpense";
 import Approvals from "./pages/Approvals";
 import Users from "./pages/Users";
 import Settings from "./pages/Settings";
+import OCRTest from "./pages/OCRTest";
 import Unauthorized from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "./lib/auth";
@@ -97,6 +98,15 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/ocr-test"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                <OCRTest />
               </ProtectedRoute>
             }
           />

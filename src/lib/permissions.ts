@@ -145,6 +145,11 @@ export const getAccessibleRoutes = (user: User | null): string[] => {
     routes.push('/settings');
   }
   
+  // OCR Test page for admins and managers
+  if (hasPermission(user, PERMISSIONS.APPROVE_EXPENSES)) {
+    routes.push('/ocr-test');
+  }
+  
   return routes;
 };
 

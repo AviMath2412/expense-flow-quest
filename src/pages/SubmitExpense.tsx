@@ -116,7 +116,34 @@ const SubmitExpense = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload an image file (JPG, PNG, etc.)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image smaller than 10MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setProcessingOCR(true);
+    
+    // Show initial processing toast
+    toast({
+      title: 'Processing receipt...',
+      description: 'Extracting data from receipt image. This may take a few seconds.',
+    });
+
     try {
       const ocrResult = await performOCR(file);
       
@@ -164,18 +191,27 @@ const SubmitExpense = () => {
         ? ` (converted from ${formatCurrency(originalAmount, originalCurrency)})`
         : '';
       
+      // Show success with extracted data
+      const extractedInfo = [];
+      if (ocrResult.vendor) extractedInfo.push(`Vendor: ${ocrResult.vendor}`);
+      if (ocrResult.category) extractedInfo.push(`Category: ${ocrResult.category}`);
+      if (ocrResult.date) extractedInfo.push(`Date: ${ocrResult.date}`);
+      
       toast({
-        title: 'Receipt processed!',
-        description: `Expense details extracted and filled automatically${conversionMessage}`,
+        title: 'Receipt processed successfully!',
+        description: `Amount: ${formatCurrency(convertedAmount, defaultCurrency)}${conversionMessage}${extractedInfo.length > 0 ? ` | ${extractedInfo.join(', ')}` : ''}`,
       });
     } catch (error) {
+      console.error('OCR processing failed:', error);
       toast({
-        title: 'OCR failed',
-        description: 'Could not extract data from receipt',
+        title: 'OCR Processing Failed',
+        description: error instanceof Error ? error.message : 'Could not process receipt. Please try again or enter manually.',
         variant: 'destructive',
       });
     } finally {
       setProcessingOCR(false);
+      // Clear the file input
+      e.target.value = '';
     }
   };
 
