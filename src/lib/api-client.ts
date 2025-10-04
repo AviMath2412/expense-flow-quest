@@ -82,12 +82,9 @@ export const updateUser = async (id: string, userData: {
 // Expense operations
 export const getExpensesByUserId = async (userId: string): Promise<ExpenseRequest[]> => {
   try {
-    console.log('API Client - Fetching expenses for user ID:', userId);
-    const result = await apiRequest<ExpenseRequest[]>(`/expenses/user/${userId}`);
-    console.log('API Client - Received expenses:', result);
-    return result;
+    return await apiRequest<ExpenseRequest[]>(`/expenses/user/${userId}`);
   } catch (error) {
-    console.error('API Client - Error fetching expenses:', error);
+    console.error('Error fetching expenses:', error);
     return [];
   }
 };

@@ -94,15 +94,7 @@ const Login = () => {
           </form>
 
           <div className="mt-6 space-y-3">
-            <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 space-y-2">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Demo Accounts:</p>
-              <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                <p><span className="font-medium">Admin:</span> admin@techcorp.com</p>
-                <p><span className="font-medium">Manager:</span> manager@techcorp.com</p>
-                <p><span className="font-medium">Employee:</span> employee@techcorp.com</p>
-                <p className="mt-2 italic text-slate-500 dark:text-slate-500">Password: any value</p>
-              </div>
-            </div>
+            
 
             <div className="text-center text-sm">
               <span className="text-muted-foreground">Don't have an account? </span>
